@@ -21,9 +21,23 @@ const DEFlag: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => 
   </svg>
 );
 
+const PTFlag: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 640 480" xmlns="http://www.w3.org/2000/svg">
+    <rect width="640" height="480" fill="#009C3B" />
+    <polygon points="320,80 560,240 320,400 80,240" fill="#FFCC29" />
+    <circle cx="320" cy="240" r="100" fill="#002776" />
+    <path d="M220 240a100 100 0 0 1 200 0" fill="none" stroke="#fff" strokeWidth="10" />
+    <text x="320" y="250" textAnchor="middle" fontSize="20" fill="#fff" fontFamily="Arial, sans-serif">
+      ORDEM E PROGRESSO
+    </text>
+  </svg>
+);
+
 const languages = [
+  { code: 'pt', name: 'Português', Flag: PTFlag },
   { code: 'en', name: 'English', Flag: GBFlag },
   { code: 'de', name: 'Deutsch', Flag: DEFlag },
+  // Added Portuguese
 ];
 
 export const LanguageSelector: React.FC = () => {
@@ -32,10 +46,17 @@ export const LanguageSelector: React.FC = () => {
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
 
-  const handleLanguageChange = (languageCode: string) => {
-    i18n.changeLanguage(languageCode);
-    setIsOpen(false);
-  };
+const handleLanguageChange = (languageCode: string) => {
+   // console.log('Mudando para:', languageCode);
+    i18n.changeLanguage(languageCode).then(() => {
+   // console.log('Idioma agora é:', i18n.language);
+   // console.log('i18n resources:', i18n.options.resources);
+    
+    // Forçar reload da página para garantir re-render
+    window.location.reload();
+  });
+  setIsOpen(false);
+};
 
   return (
     <div className="relative">

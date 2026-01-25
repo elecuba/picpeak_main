@@ -5,13 +5,14 @@ import HttpBackend from 'i18next-http-backend';
 
 import enTranslations from './locales/en.json';
 import deTranslations from './locales/de.json';
+import ptbrTranslations from './locales/pt.json';
 
 i18n
   .use(HttpBackend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: 'en',
+    fallbackLng: 'pt',
     debug: false,
     
     resources: {
@@ -20,6 +21,9 @@ i18n
       },
       de: {
         translation: deTranslations,
+      },
+      pt: {
+        translation: ptbrTranslations,
       },
     },
     

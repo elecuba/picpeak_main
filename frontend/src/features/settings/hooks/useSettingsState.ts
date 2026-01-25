@@ -49,6 +49,8 @@ export interface EventSettings {
   event_require_customer_name: boolean;
   event_require_customer_email: boolean;
   event_require_admin_email: boolean;
+  event_require_event_date: boolean;
+  event_require_expiration: boolean;
 }
 
 export function useSettingsState() {
@@ -79,7 +81,7 @@ export function useSettingsState() {
     enable_registration: false,
     maintenance_mode: false,
     short_gallery_urls: false,
-    default_language: 'en',
+    default_language: 'pt',
     date_format: { format: 'dd/MM/yyyy', locale: 'en-GB' }
   });
 
@@ -109,7 +111,9 @@ export function useSettingsState() {
   const [eventSettings, setEventSettings] = useState<EventSettings>({
     event_require_customer_name: true,
     event_require_customer_email: true,
-    event_require_admin_email: true
+    event_require_admin_email: true,
+    event_require_event_date: true,
+    event_require_expiration: true
   });
 
   // Account form state
@@ -133,27 +137,44 @@ export function useSettingsState() {
         i18n.changeLanguage(settings.general_default_language);
       }
 
-      setGeneralSettings({
-        site_url: settings.general_site_url || '',
-        default_expiration_days: toNumber(settings.general_default_expiration_days, 30),
-        max_file_size_mb: toNumber(settings.general_max_file_size_mb, 50),
-        max_files_per_upload: Math.min(
-          MAX_FILES_PER_UPLOAD_LIMIT,
-          Math.max(1, toNumber(settings.general_max_files_per_upload, 500))
-        ),
-        allowed_file_types: settings.general_allowed_file_types || 'jpg,jpeg,png,gif,webp',
-        enable_watermark: toBoolean(settings.general_enable_watermark, false),
-        enable_analytics: toBoolean(settings.general_enable_analytics, true),
-        enable_registration: toBoolean(settings.general_enable_registration, false),
-        maintenance_mode: toBoolean(settings.general_maintenance_mode, false),
-        short_gallery_urls: toBoolean(settings.general_short_gallery_urls, false),
-        default_language: settings.general_default_language || 'en',
-        date_format: settings.general_date_format
-          ? (typeof settings.general_date_format === 'string'
-              ? { format: settings.general_date_format, locale: settings.general_date_format.includes('MM/dd') ? 'en-US' : 'en-GB' }
-              : settings.general_date_format)
-          : { format: 'dd/MM/yyyy', locale: 'en-GB' }
-      });
+setGeneralSettings({
+  site_url: settings.general_site_url || '',
+
+  default_expiration_days: toNumber(settings.general_default_expiration_days, 30),
+  max_file_size_mb: toNumber(settings.general_max_file_size_mb, 50),
+
+  max_files_per_upload: Math.min(
+    MAX_FILES_PER_UPLOAD_LIMIT,
+    Math.max(1, toNumber(settings.general_max_files_per_upload, 500))
+  ),
+
+  allowed_file_types: settings.general_allowed_file_types || 'jpg,jpeg,png,gif,webp',
+  enable_watermark: toBoolean(settings.general_enable_watermark, false),
+  enable_analytics: toBoolean(settings.general_enable_analytics, true),
+  enable_registration: toBoolean(settings.general_enable_registration, false),
+  maintenance_mode: toBoolean(settings.general_maintenance_mode, false),
+  short_gallery_urls: toBoolean(settings.general_short_gallery_urls, false),
+
+  // 👉 idioma padrão agora com pt-BR
+  default_language: settings.general_default_language || 'pt',
+
+  date_format: settings.general_date_format
+    ? (typeof settings.general_date_format === 'string'
+        ? {
+            format: settings.general_date_format,
+            locale:
+              settings.general_date_format.includes('MM/dd')
+                ? 'en-US'
+                : settings.general_date_format.includes('dd/MM')
+                  ? 'pt'
+                  : 'en-GB'
+          }
+        : settings.general_date_format)
+    : {
+        format: 'dd/MM/yyyy',
+        locale: 'pt'
+      }
+});
 
       setSecuritySettings({
         password_min_length: toNumber(settings.security_password_min_length, 8),
@@ -178,7 +199,9 @@ export function useSettingsState() {
       setEventSettings({
         event_require_customer_name: toBoolean(settings.event_require_customer_name, true),
         event_require_customer_email: toBoolean(settings.event_require_customer_email, true),
-        event_require_admin_email: toBoolean(settings.event_require_admin_email, true)
+        event_require_admin_email: toBoolean(settings.event_require_admin_email, true),
+        event_require_event_date: toBoolean(settings.event_require_event_date, true),
+        event_require_expiration: toBoolean(settings.event_require_expiration, true)
       });
     }
   }, [settings, i18n]);
