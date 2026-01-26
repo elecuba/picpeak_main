@@ -376,8 +376,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
           return (b.comment_count || 0) - (a.comment_count || 0);
         case 'date':
         default:
-          return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
-      }
+
+        console.log('Sorting by date:', a.taken_at, a.uploaded_at, b.taken_at, b.uploaded_at);
+          const dateA = new Date(a.taken_at || a.uploaded_at).getTime();
+          const dateB = new Date(b.taken_at || b.uploaded_at).getTime();
+
+        return dateB - dateA;
+    }
     });
     
     // Transform full-size URLs for watermarks if enabled
