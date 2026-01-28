@@ -13,6 +13,8 @@ const { getMaxFilesPerUpload } = require('../services/uploadSettings');
 const { processUploadedPhotos } = require('../services/photoProcessor');
 const chunkedUpload = require('../services/chunkedUploadService');
 const router = express.Router();
+const { extractTakenAt } = require('../services/extractMediaDate');
+
 
 // Get storage path from environment or default
 const getStoragePath = () => process.env.STORAGE_PATH || path.join(__dirname, '../../../storage');
@@ -253,14 +255,20 @@ router.post('/:eventId/upload', adminAuth, requirePermission('photos.upload'), u
             const relativePath = path.relative(path.join(storagePath, 'events/active'), finalPath);
             
             // Prepare photo data for batch insert
+            const takenAt =
+              (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/'))
+                ? await extractTakenAt(tempPath, file.mimetype)
+                : null;
+
             const photoData = {
               event_id: parseInt(eventId),
               filename: newFilename,
               path: relativePath,
-              thumbnail_path: null, // Will generate after successful commit
+              thumbnail_path: null,
+              category_id: parsedCategoryId,
               type: photoType,
-              category_id: parsedCategoryId, // Save the selected category
-              size_bytes: tempStats.size // Use actual file size from stat
+              size_bytes: tempStats.size,
+              taken_at: takenAt,
             };
             
             batchPhotos.push(photoData);
@@ -765,6 +773,7 @@ router.get('/:eventId/photos', adminAuth, requirePermission('photos.view'), asyn
         category_slug: photo.pc_slug || photo.type,
         size: photo.size_bytes,
         uploaded_at: photo.uploaded_at,
+        taken_at: photo.taken_at,
         // Feedback data
         has_feedback: (commentMap[photo.id] > 0 || photo.average_rating > 0 || photo.like_count > 0),
         average_rating: photo.average_rating || 0,

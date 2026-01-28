@@ -68,6 +68,7 @@ export interface Photo {
   category_slug?: string;
   size: number;
   uploaded_at: string;
+  taken_at?: string | null;
   // Media type fields
   media_type?: 'photo' | 'video' | 'image';
   mime_type?: string;

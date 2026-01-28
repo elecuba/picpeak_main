@@ -4,6 +4,8 @@ const { db } = require('../database/db');
 const { generateThumbnail } = require('./imageProcessor');
 const { generatePhotoFilename } = require('../utils/filenameSanitizer');
 const { processUploadedVideo, isVideoMimeType } = require('./videoProcessor');
+const { extractTakenAt } = require('./extractMediaDate');
+
 
 // Get storage path from environment or default
 const getStoragePath = () => process.env.STORAGE_PATH || path.join(__dirname, '../../../storage');
@@ -182,6 +184,10 @@ async function processUploadedPhotos(files, eventId, uploadedBy = 'admin', categ
       let insertResult;
       const clientName = trx?.client?.config?.client;
       const supportsReturning = ['pg', 'postgres', 'postgresql'].includes(clientName);
+      const takenAt =
+        (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/'))
+          ? await extractTakenAt(tempPath, file.mimetype)
+          : null;
 
       const photoData = {
         event_id: eventId,
@@ -193,7 +199,8 @@ async function processUploadedPhotos(files, eventId, uploadedBy = 'admin', categ
         uploaded_by: uploadedBy,
         source_origin: 'managed',
         media_type: mediaType,
-        mime_type: file.mimetype
+        mime_type: file.mimetype,
+        taken_at: takenAt
       };
 
       // Add video-specific metadata if applicable
