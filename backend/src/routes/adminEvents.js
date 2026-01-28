@@ -159,6 +159,7 @@ router.post('/', adminAuth, requirePermission('events.create'), [
     const {
       event_type,
       event_name,
+      photo_cap,
       event_date,
       admin_email,
       password,
@@ -285,6 +286,7 @@ router.post('/', adminAuth, requirePermission('events.create'), [
       slug,
       event_type,
       event_name,
+      photo_cap,
       event_date,
       ...(customerColumnsAvailable ? { customer_name: customerName, customer_email: customerEmail } : {}),
       host_name: customerName,
@@ -362,6 +364,7 @@ router.post('/', adminAuth, requirePermission('events.create'), [
       id: eventId,
       slug,
       event_name,
+      photo_cap,
       event_type,
       customer_name: customerName,
       customer_email: customerEmail,

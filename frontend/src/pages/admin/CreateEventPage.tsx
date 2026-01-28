@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   Calendar,
   Mail,
   Lock,
@@ -27,6 +27,7 @@ import { Code } from 'lucide-react';
 
 interface FormData {
   event_type: string;
+  photo_cap: number;
   event_name: string;
   event_date: string;
   customer_name: string;
@@ -78,16 +79,17 @@ export const CreateEventPage: React.FC = () => {
   const isMountedRef = useRef(true);
   const [showThemeCustomizer, setShowThemeCustomizer] = useState(false);
   // const [showPreview, setShowPreview] = useState(false);
-  
+
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
-  
+
   const [formData, setFormData] = useState<FormData>({
     event_type: 'wedding',
     event_name: '',
+    photo_cap: 0,
     event_date: new Date().toISOString().split('T')[0], // Initialize with ISO date format
     customer_name: '',
     customer_email: '',
@@ -116,7 +118,7 @@ export const CreateEventPage: React.FC = () => {
       rate_limit_max_requests: 10,
     },
   });
-  
+
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -181,7 +183,7 @@ export const CreateEventPage: React.FC = () => {
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.error || error.message || t('errors.eventCreationFailed');
-      
+
       // If validation errors exist, show them
       if (error.response?.data?.errors) {
         const validationErrors = error.response.data.errors;
@@ -257,7 +259,7 @@ export const CreateEventPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -267,6 +269,7 @@ export const CreateEventPage: React.FC = () => {
     const payload = {
       event_type: formData.event_type,
       event_name: formData.event_name,
+      photo_cap: formData.photo_cap,
       event_date: formData.event_date,
       customer_name: formData.customer_name,
       customer_email: formData.customer_email,
@@ -318,21 +321,25 @@ export const CreateEventPage: React.FC = () => {
   };
 
   const handlePasswordGenerated = (password: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       password: password,
-      confirm_password: password 
+      confirm_password: password
     }));
-    
+
+
+
     // Clear password errors since we generated a valid one
     if (errors.password || errors.confirm_password) {
-      setErrors(prev => ({ 
-        ...prev, 
+      setErrors(prev => ({
+        ...prev,
         password: undefined,
-        confirm_password: undefined 
+        confirm_password: undefined
       }));
     }
   };
+
+
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -369,11 +376,10 @@ export const CreateEventPage: React.FC = () => {
                     key={type.value}
                     type="button"
                     onClick={() => setFormData({ ...formData, event_type: type.value })}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      formData.event_type === type.value
+                    className={`p-4 rounded-lg border-2 transition-all ${formData.event_type === type.value
                         ? 'border-primary-600 bg-primary-50'
                         : 'border-neutral-200 hover:border-neutral-300'
-                    }`}
+                      }`}
                   >
                     <div className="text-2xl mb-1">{type.emoji}</div>
                     <div className="text-sm font-medium">{t(type.labelKey)}</div>
@@ -398,6 +404,16 @@ export const CreateEventPage: React.FC = () => {
                 value={formData.event_date}
                 onChange={handleInputChange('event_date')}
                 error={errors.event_date}
+                leftIcon={<Calendar className="w-5 h-5" />}
+              />
+              <Input
+                type="number"
+                //min={0}
+                //step={1}
+                label={t('events.photoCap')}
+                value={formData.photo_cap}
+                onChange={handleInputChange('photo_cap')}
+                error={errors.photo_cap}
                 leftIcon={<Calendar className="w-5 h-5" />}
               />
             </div>
@@ -437,7 +453,7 @@ export const CreateEventPage: React.FC = () => {
 
             {/* Quick Theme Preview */}
             {!showThemeCustomizer && (
-              <div className="p-4 rounded-lg border border-neutral-200" 
+              <div className="p-4 rounded-lg border border-neutral-200"
                 style={{
                   backgroundColor: formData.theme_config.backgroundColor,
                   color: formData.theme_config.textColor
@@ -448,11 +464,11 @@ export const CreateEventPage: React.FC = () => {
                     {GALLERY_THEME_PRESETS[formData.theme_preset]?.name || 'Custom Theme'}
                   </h3>
                   <div className="flex gap-2">
-                    <div 
+                    <div
                       className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
                       style={{ backgroundColor: formData.theme_config.primaryColor }}
                     />
-                    <div 
+                    <div
                       className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
                       style={{ backgroundColor: formData.theme_config.accentColor }}
                     />
@@ -478,12 +494,12 @@ export const CreateEventPage: React.FC = () => {
                     showGalleryLayouts={true}
                     hideActions={true}
                   />
-                  
+
                   {/* Gallery Preview */}
                   <div className="lg:sticky lg:top-4 lg:h-fit">
-                    <GalleryPreview 
-                      theme={formData.theme_config} 
-                      className="shadow-lg" 
+                    <GalleryPreview
+                      theme={formData.theme_config}
+                      className="shadow-lg"
                     />
                   </div>
                 </div>
@@ -505,11 +521,10 @@ export const CreateEventPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, css_template_id: null })}
-                    className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      formData.css_template_id === null
+                    className={`p-4 rounded-lg border-2 transition-all text-left ${formData.css_template_id === null
                         ? 'border-primary-600 bg-primary-50'
                         : 'border-neutral-200 hover:border-neutral-300'
-                    }`}
+                      }`}
                   >
                     <div className="font-medium text-sm">{t('events.noTemplate', 'No Template')}</div>
                     <div className="text-xs text-neutral-500 mt-1">
@@ -523,11 +538,10 @@ export const CreateEventPage: React.FC = () => {
                       key={template.id}
                       type="button"
                       onClick={() => setFormData({ ...formData, css_template_id: template.id })}
-                      className={`p-4 rounded-lg border-2 transition-all text-left ${
-                        formData.css_template_id === template.id
+                      className={`p-4 rounded-lg border-2 transition-all text-left ${formData.css_template_id === template.id
                           ? 'border-primary-600 bg-primary-50'
                           : 'border-neutral-200 hover:border-neutral-300'
-                      }`}
+                        }`}
                     >
                       <div className="font-medium text-sm">{template.name}</div>
                       <div className="text-xs text-neutral-500 mt-1">
@@ -613,7 +627,7 @@ export const CreateEventPage: React.FC = () => {
 
               {!formData.require_password && (
                 <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">
-                  {t('events.publicGalleryWarning', 'Public galleries are accessible to anyone with the link. Consider enabling download watermarks and monitoring activity.')} 
+                  {t('events.publicGalleryWarning', 'Public galleries are accessible to anyone with the link. Consider enabling download watermarks and monitoring activity.')}
                 </div>
               )}
             </div>
@@ -640,7 +654,7 @@ export const CreateEventPage: React.FC = () => {
                       </button>
                     }
                   />
-                  
+
                   {/* Password Generator */}
                   <div className="mt-2">
                     <PasswordGenerator
@@ -717,9 +731,9 @@ export const CreateEventPage: React.FC = () => {
                   </label>
                   <select
                     value={formData.upload_category_id || ''}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      upload_category_id: e.target.value ? Number(e.target.value) : null 
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      upload_category_id: e.target.value ? Number(e.target.value) : null
                     })}
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >

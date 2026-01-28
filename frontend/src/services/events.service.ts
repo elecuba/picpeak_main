@@ -20,6 +20,7 @@ const normalizeEvent = (event: Event): Event => {
 interface CreateEventData {
   event_type: string;
   event_name: string;
+  photo_cap?: number;
   event_date: string;
   customer_name?: string;
   customer_email: string;
@@ -43,6 +44,7 @@ interface CreateEventData {
 
 interface UpdateEventData {
   event_name?: string;
+  photo_cap?: number;
   event_date?: string;
   customer_name?: string;
   customer_email?: string;
@@ -78,7 +80,7 @@ export const eventsService = {
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (status) {
       params.append('status', status);
     }

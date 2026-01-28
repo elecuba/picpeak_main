@@ -107,6 +107,7 @@ const createEvent = async (eventData) => {
   const {
     event_type,
     event_name,
+    photo_cap,
     event_date,
     customer_name,
     customer_email,
@@ -173,6 +174,7 @@ const createEvent = async (eventData) => {
     slug,
     event_type,
     event_name,
+    photo_cap,
     event_date,
     ...(customerColumnsAvailable ? { customer_name, customer_email } : {}),
     host_name: customer_name,

@@ -18,7 +18,7 @@ import { analyticsService } from '../../services/analytics.service';
 import { useDevToolsProtection } from '../../hooks/useDevToolsProtection';
 import { GALLERY_THEME_PRESETS } from '../../types/theme.types';
 import { api } from '../../config/api';
-import { Upload, Menu } from 'lucide-react';
+import { Upload, Menu, Camera } from 'lucide-react';
 import { galleryService } from '../../services/gallery.service';
 import { useWatermarkSettings } from '../../hooks/useWatermarkSettings';
 import { useGalleryCustomCss } from '../../hooks/useGalleryCustomCss';
@@ -31,6 +31,7 @@ interface GalleryViewProps {
     event_name: string;
     event_type: string;
     event_date: string;
+    photo_cap?: number;
     welcome_message?: string;
     color_theme?: string;
     expires_at: string;
@@ -78,7 +79,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
     }
     return 'photo';
   };
-  
+
   // Generate a unique guest ID for this session
   useEffect(() => {
     // Use existing guest ID from localStorage or generate new one
@@ -89,11 +90,11 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
     }
     setGuestId(storedGuestId);
   }, []);
-  
+
   // Fetch photos WITHOUT filter (always get all photos, filter on frontend)
   // This ensures counts are always calculated from the full dataset
   const { data, isLoading, error, refetch } = useGalleryPhotos(slug, 'all', guestId);
-  
+
   // Set protection level when data is available
   useEffect(() => {
     if (data?.event?.protection_level) {
@@ -149,7 +150,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
       document.removeEventListener('contextmenu', handleContextMenu);
     };
   }, [disableRightClick]);
-  
+
   // Data updates are handled by React Query
   const downloadAllMutation = useDownloadAllPhotos();
 
@@ -259,7 +260,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
     if (settingsData && data?.event) {
       let themeToApply = null;
       const fullEvent = data.event; // Use the full event data from API
-      
+
       if (fullEvent.color_theme) {
         try {
           // Check if it's a valid JSON string
@@ -289,7 +290,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
         // No event theme, use global theme
         themeToApply = settingsData.theme_config;
       }
-      
+
       // Apply theme with a small delay to ensure it overrides any global theme
       if (themeToApply) {
         // Use setTimeout to ensure this runs after any global theme application
@@ -304,7 +305,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
           }
           setTheme(themeToApply);
         }, 0);
-        
+
         return () => clearTimeout(timer);
       }
     }
@@ -318,7 +319,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
   // Filter and sort photos
   const filteredPhotos = useMemo(() => {
     if (!data?.photos) return [];
-    
+
     let photos = [...data.photos];
 
     if (mediaFilter === 'photo') {
@@ -326,20 +327,20 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
     } else if (mediaFilter === 'video') {
       photos = photos.filter(photo => resolveMediaType(photo) === 'video');
     }
-    
+
     // Apply category filter
     if (selectedCategoryId) {
       photos = photos.filter(photo => photo.category_id === selectedCategoryId);
     }
-    
+
     // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      photos = photos.filter(photo => 
+      photos = photos.filter(photo =>
         photo.filename.toLowerCase().includes(term)
       );
     }
-    
+
     // Apply feedback filter
     switch (filterType) {
       case 'liked':
@@ -357,7 +358,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
       default:
         break;
     }
-    
+
     // Apply sorting
     photos.sort((a, b) => {
       switch (sortBy) {
@@ -379,7 +380,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
           return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
       }
     });
-    
+
     // Transform full-size URLs for watermarks if enabled
     // Note: Thumbnails are watermarked server-side at the thumbnail endpoint
     if (watermarkEnabled) {
@@ -388,7 +389,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
         url: `/api/gallery/${slug}/photo/${photo.id}`
       }));
     }
-    
+
     return photos;
   }, [data?.photos, selectedCategoryId, searchTerm, sortBy, watermarkEnabled, slug, filterType, mediaFilter]);
 
@@ -415,9 +416,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
     if (!allowDownloads) {
       return;
     }
-    
+
     downloadAllMutation.mutate(slug);
-    
+
     // Track download all action
     analyticsService.trackGalleryEvent('bulk_download', {
       gallery: slug,
@@ -428,25 +429,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
 
   const handleDownloadSelected = async () => {
     if (selectedPhotos.size === 0) return;
-    
+
     // Prevent downloads if gallery is expired or downloads disabled
     if (!allowDownloads) {
       return;
     }
-    
+
     const selectedPhotosList = filteredPhotos.filter(p => selectedPhotos.has(p.id));
-    
+
     // Track bulk download
     analyticsService.trackGalleryEvent('bulk_download', {
       gallery: slug,
       photo_count: selectedPhotos.size
     });
-    
+
     // Download each selected photo
     for (const photo of selectedPhotosList) {
       await galleryService.downloadPhoto(slug, photo.id, photo.filename);
     }
-    
+
     // Clear selection after download
     setSelectedPhotos(new Set());
     setIsSelectionMode(false);
@@ -463,10 +464,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
         return true;
       })
       .forEach(photo => {
-      if (photo.category_id) {
-        counts[photo.category_id] = (counts[photo.category_id] || 0) + 1;
-      }
-    });
+        if (photo.category_id) {
+          counts[photo.category_id] = (counts[photo.category_id] || 0) + 1;
+        }
+      });
     return counts;
   }, [data?.photos, mediaFilter]);
 
@@ -506,7 +507,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
             </div>
           </div>
         </header>
-        
+
         {/* Content Skeleton */}
         <div className="container mt-6">
           <Skeleton height={80} className="mb-6" />
@@ -519,13 +520,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
   if (error || !data) {
     // Check if it's an authentication error (401)
     const is401Error = (error as any)?.response?.status === 401;
-    
+
     if (is401Error) {
       // Authentication failed - logout and let the parent component handle re-authentication
       logout();
       return null;
     }
-    
+
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
@@ -599,15 +600,89 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
             <span className="hidden sm:inline">{t('common.menu')}</span>
           </Button>
         ) : undefined}
+
+        moreitem={(() => {
+          const items = [];
+
+          // Show photo cap if available
+          if (event.photo_cap != null) {
+            items.push(
+              <span key="photo-cap" className="flex items-center">
+                <Camera className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
+                <span>{t('events.photoCap')}: {event.photo_cap}</span>
+              </span>
+            );
+          }
+
+          // Show liked photos count
+          if (event.photo_cap != null) {
+            const currentLikes = likeCount ?? 0;
+            const limitReached = currentLikes > event.photo_cap;
+
+            items.push(
+              <span
+                key="liked-count"
+
+                className={`flex items-center ${limitReached ? 'text-red-500 font-semibold' : 'text-green-600'
+                  }`}
+              >
+                <Camera className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
+                <span>
+                  {t('gallery.photosSelected1')}: {currentLikes}
+                </span>
+              </span>
+            );
+          }
+
+
+          return items.length > 0 ? <>{items}</> : null;
+        })()}
+
+
+        moreitem1={(() => {
+          if (!event.photo_cap || event.photo_cap <= 0) return null;
+
+          const currentLikes = likeCount ?? 0;
+          const percent = Math.min((currentLikes / event.photo_cap) * 100, 100);
+
+          return (
+            <div className="w-full mt-2">
+              {/* Progress bar */}
+              <div className="w-full h-3 rounded-full bg-neutral-200 overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 ${currentLikes > event.photo_cap ? 'bg-red-500' : 'bg-green-500'
+                    }`}
+                  style={{ width: `${percent}%`, minWidth: '2px' }}
+                />
+              </div>
+
+              {/* Warning */}
+              {currentLikes > event.photo_cap && (
+                <div className="mt-1 text-red-600 text-xs">
+                  <strong>Photo limit exceeded.</strong> Any extra photos
+                  will require additional payment. Please contact us to
+                  review the new price.
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+
+
         headerExtra={(() => {
           const items = [];
-          
+
           if (daysUntilExpiration <= 1 && daysUntilExpiration > 0) {
             items.push(
               <CountdownTimer key="countdown" expiresAt={event.expires_at} className="mr-2" />
             );
           }
-          
+
+
+
+
+
           // Upload button only on desktop when sidebar is shown
           const allowUploads = data?.event?.allow_user_uploads || event?.allow_user_uploads;
           if (allowUploads && showSidebar && !isMobile) {
@@ -623,7 +698,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
               </Button>
             );
           }
-          
+
           // Upload button for non-sidebar layouts
           if (allowUploads && !showSidebar) {
             items.push(
@@ -640,7 +715,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
               </Button>
             );
           }
-          
+
           return items.length > 0 ? <>{items}</> : null;
         })()}
       >
@@ -659,25 +734,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ slug, event }) => {
               onCategoryChange={setSelectedCategoryId}
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            photoCount={filteredPhotos.length}
-            // Feedback filter props
-            feedbackEnabled={feedbackEnabled}
-            currentFilter={filterType}
-            onFilterChange={setFilterType}
-            mediaFilter={mediaFilter}
-            onMediaFilterChange={setMediaFilter}
-            showMediaFilter={showMediaFilter}
-          />
-        </div>
-      ) : null}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              photoCount={filteredPhotos.length}
+              // Feedback filter props
+              feedbackEnabled={feedbackEnabled}
+              currentFilter={filterType}
+              onFilterChange={setFilterType}
+              mediaFilter={mediaFilter}
+              onMediaFilterChange={setMediaFilter}
+              showMediaFilter={showMediaFilter}
+            />
+          </div>
+        ) : null}
 
         {/* Photo Grid */}
         <div className={showSidebar ? "mt-6" : "mt-6"}>
-          <PhotoGridWithLayouts 
-            photos={filteredPhotos} 
-            slug={slug} 
+          <PhotoGridWithLayouts
+            photos={filteredPhotos}
+            slug={slug}
             categoryId={selectedCategoryId}
             onFeedbackChange={() => refetch()}
             heroPhotoOverride={staticHeroPhoto}
