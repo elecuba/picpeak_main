@@ -217,6 +217,7 @@
   "gallery": {
     "title": "Galeria de Fotos",
     "welcomeMessage": "Mensagem de Boas-vindas",
+    "photosSelected1": "Selecionado",
     "expiresOn": "Expira em",
     "expires": "Expira",
     "expired": "Expirado",
