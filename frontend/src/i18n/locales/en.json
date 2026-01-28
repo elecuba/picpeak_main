@@ -259,6 +259,7 @@
     "selectPhotos": "Select Photos",
     "cancelSelection": "Cancel Selection",
     "photosSelected": "{{count}} selected",
+    "photosSelected1": "Selected",
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
     "downloadSelected": "Download {{count}} Selected",

@@ -83,6 +83,7 @@ router.post('/', adminAuth, [
     const {
       event_type,
       event_name,
+      photo_cap,
       event_date,
       admin_email,
       password,
@@ -152,6 +153,7 @@ router.post('/', adminAuth, [
       slug,
       event_type,
       event_name,
+      photo_cap,
       event_date,
       ...(customerColumnsAvailable ? { customer_name: customerName, customer_email: customerEmail } : {}),
       host_name: customerName,

@@ -273,6 +273,7 @@ router.post('/gallery/verify', [
       event: {
         id: event.id,
         event_name: event.event_name,
+        photo_cap: event.photo_cap,
         event_type: event.event_type,
         event_date: event.event_date,
         welcome_message: event.welcome_message,
@@ -346,6 +347,7 @@ router.post('/gallery/share-login', [
       event: {
         id: event.id,
         event_name: event.event_name,
+        photo_cap: event.photo_cap,
         event_type: event.event_type,
         event_date: event.event_date,
         welcome_message: event.welcome_message,

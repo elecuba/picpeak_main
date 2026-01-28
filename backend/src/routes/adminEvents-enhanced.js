@@ -31,6 +31,7 @@ router.post('/', adminAuth, requirePermission('events.create'), [
     const {
       event_type,
       event_name,
+      photo_cap,
       event_date,
       customer_name,
       customer_email,
@@ -89,6 +90,7 @@ router.post('/', adminAuth, requirePermission('events.create'), [
       slug,
       event_type,
       event_name,
+      photo_cap,
       event_date,
       customer_name,
       customer_email,

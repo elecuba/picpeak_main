@@ -131,16 +131,17 @@ export const EventDetailsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { format } = useLocalizedDate();
-  
+
   // Validate ID parameter
   React.useEffect(() => {
     if (!id || isNaN(parseInt(id))) {
       navigate('/admin/events');
     }
   }, [id, navigate]);
-  
+
   type EditFormState = {
     welcome_message: string;
+    photo_cap: number;
     color_theme: string;
     css_template_id: number | null;
     expires_at: string;
@@ -165,6 +166,7 @@ export const EventDetailsPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<EditFormState>({
     welcome_message: '',
+    photo_cap: 0,
     color_theme: '',
     css_template_id: null,
     expires_at: '',
@@ -387,6 +389,7 @@ export const EventDetailsPage: React.FC = () => {
   const handleStartEdit = () => {
     setEditForm({
       welcome_message: event.welcome_message || '',
+      photo_cap: event.photo_cap || 0,
       color_theme: event.color_theme || '',
       css_template_id: event.css_template_id || null,
       expires_at: format(safeParseDate(event.expires_at), 'yyyy-MM-dd'),
@@ -409,12 +412,12 @@ export const EventDetailsPage: React.FC = () => {
     });
 
     setShowNewPassword(false);
-    
+
     // Set feedback settings if available
     if (eventFeedbackSettings) {
       setFeedbackSettings(eventFeedbackSettings);
     }
-    
+
     // Parse theme configuration
     if (event.color_theme) {
       try {
@@ -442,7 +445,7 @@ export const EventDetailsPage: React.FC = () => {
       setCurrentTheme(GALLERY_THEME_PRESETS.default.config);
       setCurrentPresetName('default');
     }
-    
+
     setIsEditing(true);
   };
 
@@ -482,7 +485,7 @@ export const EventDetailsPage: React.FC = () => {
       toast.error(t('events.externalFolderRequired', 'Please select an external folder before saving.'));
       return;
     }
-    
+
     // Clean up the data - remove undefined values
     const updateData: any = {
       expires_at: editForm.expires_at,
@@ -497,10 +500,13 @@ export const EventDetailsPage: React.FC = () => {
       enable_devtools_protection: editForm.enable_devtools_protection,
       use_canvas_rendering: editForm.use_canvas_rendering,
     };
-    
+
     // Only include fields that have defined values
     if (editForm.welcome_message !== undefined && editForm.welcome_message !== null) {
       updateData.welcome_message = editForm.welcome_message;
+    }
+    if (editForm.photo_cap !== undefined && editForm.photo_cap !== null) {
+      updateData.photo_cap = editForm.photo_cap;
     }
     if (themeToSave) {
       updateData.color_theme = themeToSave;
@@ -522,19 +528,19 @@ export const EventDetailsPage: React.FC = () => {
     if (editForm.new_password) {
       updateData.password = editForm.new_password;
     }
-    
+
     // Remove any keys with undefined values
     Object.keys(updateData).forEach(key => {
       if (updateData[key] === undefined) {
         delete updateData[key];
       }
     });
-    
+
     // Event update with validation
-    
+
     // Update event details
     updateMutation.mutate(updateData);
-    
+
     // Update feedback settings separately
     try {
       await feedbackService.updateEventFeedbackSettings(id!, feedbackSettings);
@@ -570,7 +576,7 @@ export const EventDetailsPage: React.FC = () => {
           throw new Error('Copy failed');
         }
       }
-      
+
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
       toast.success(t('toast.linkCopied'));
@@ -594,7 +600,7 @@ export const EventDetailsPage: React.FC = () => {
         >
           {t('events.backToEvents')}
         </Button>
-        
+
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-neutral-900">{event.event_name}</h1>
@@ -605,11 +611,10 @@ export const EventDetailsPage: React.FC = () => {
               </span>
               <span className="capitalize">{event.event_type}</span>
               <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                  isGalleryPublic(event.require_password)
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isGalleryPublic(event.require_password)
                     ? 'bg-green-100 text-green-700'
                     : 'bg-neutral-100 text-neutral-700'
-                }`}
+                  }`}
               >
                 {isGalleryPublic(event.require_password) ? t('events.publicAccess', 'Public access') : t('events.passwordProtected', 'Password protected')}
               </span>
@@ -621,7 +626,7 @@ export const EventDetailsPage: React.FC = () => {
               ) : null}
             </div>
           </div>
-          
+
           <div className="flex gap-2 items-center">
             {!event.is_archived && (
               <>
@@ -699,7 +704,7 @@ export const EventDetailsPage: React.FC = () => {
             <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${isExpired ? 'text-red-600' : 'text-orange-600'}`} />
             <div className="flex-1">
               <p className={`font-medium ${isExpired ? 'text-red-900' : 'text-orange-900'}`}>
-                {isExpired 
+                {isExpired
                   ? t('events.eventExpiredMessage')
                   : t('events.eventExpiresIn', { days: daysUntilExpiration })
                 }
@@ -732,21 +737,19 @@ export const EventDetailsPage: React.FC = () => {
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'overview'
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-            }`}
+              }`}
           >
             {t('events.overview')}
           </button>
           <button
             onClick={() => setActiveTab('photos')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-              activeTab === 'photos'
+            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === 'photos'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-            }`}
+              }`}
           >
             <Image className="w-4 h-4" />
             <span>{t('events.photos')}</span>
@@ -758,11 +761,10 @@ export const EventDetailsPage: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('categories')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'categories'
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'categories'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
-            }`}
+              }`}
           >
             {t('events.categories')}
           </button>
@@ -772,671 +774,693 @@ export const EventDetailsPage: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Left Column - Main Details */}
-        <div className="space-y-6">
-          {/* Event Information */}
-          <Card padding="md">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.eventInformation')}</h2>
-            
-            {isEditing ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    {t('events.welcomeMessageLabel')}
-                  </label>
-                  <textarea
-                    value={editForm.welcome_message}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, welcome_message: e.target.value }))}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={3}
-                    placeholder={t('events.welcomeMessage')}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    {t('events.hostName')}
-                  </label>
-                  <Input
-                    type="text"
-                    value={editForm.customer_name}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, customer_name: e.target.value }))}
-                    placeholder={t('events.hostNamePlaceholder')}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    {t('events.expirationDate')}
-                  </label>
-                  <Input
-                    type="date"
-                    value={editForm.expires_at}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, expires_at: e.target.value }))}
-                    min={format(new Date(), 'yyyy-MM-dd')}
-                  />
-                </div>
-                
-                {/* Hero Photo Selection */}
-                <HeroPhotoSelector
-                  photos={photos || []}
-                  currentHeroPhotoId={editForm.hero_photo_id}
-                  onSelect={(photoId) => setEditForm(prev => ({ ...prev, hero_photo_id: photoId }))}
-                  isEditing={isEditing}
-                />
+          {/* Left Column - Main Details */}
+          <div className="space-y-6">
+            {/* Event Information */}
+            <Card padding="md">
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.eventInformation')}</h2>
 
-                <div>
-                  <label className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="mt-1 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                      checked={editForm.require_password}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setEditForm(prev => ({
-                          ...prev,
-                          require_password: checked,
-                          new_password: checked ? prev.new_password : '',
-                          confirm_new_password: checked ? prev.confirm_new_password : '',
-                        }));
-                        if (!checked) {
-                          setShowNewPassword(false);
-                        }
-                      }}
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-neutral-700">{t('events.requirePasswordToggle')}</span>
-                      <p className="text-xs text-neutral-500 mt-1">
-                        {t('events.requirePasswordToggleHelp', 'Disable this if you want to share the gallery without a password. Anyone with the link will be able to view the photos.')}
-                      </p>
-                    </div>
-                  </label>
-
-                  {!editForm.require_password && (
-                    <div className="mt-2 rounded-md border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">
-                      {t('events.publicGalleryWarning', 'Public galleries are accessible to anyone with the link. Consider enabling download watermarks and monitoring activity.')} 
-                    </div>
-                  )}
-                </div>
-
-                {editForm.require_password && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">
-                        {t('events.newPasswordLabel', 'New gallery password')}
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type={showNewPassword ? 'text' : 'password'}
-                          value={editForm.new_password}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, new_password: e.target.value }))}
-                          placeholder={t('events.enterPassword')}
-                          leftIcon={<Lock className="w-5 h-5 text-neutral-400" />}
-                          className="pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        >
-                          {showNewPassword ? (
-                            <EyeOff className="w-5 h-5 text-neutral-400 hover:text-neutral-600" />
-                          ) : (
-                            <Eye className="w-5 h-5 text-neutral-400 hover:text-neutral-600" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">
-                        {t('events.confirmPassword')}
-                      </label>
-                      <Input
-                        type={showNewPassword ? 'text' : 'password'}
-                        value={editForm.confirm_new_password}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, confirm_new_password: e.target.value }))}
-                        placeholder={t('events.confirmPasswordPlaceholder')}
-                        leftIcon={<Lock className="w-5 h-5 text-neutral-400" />}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    {t('events.sourceMode', 'Source Mode')}
-                  </label>
-                  <select
-                    value={editForm.source_mode}
-                    onChange={(e) => {
-                      const mode = e.target.value as 'managed' | 'reference';
-                      setEditForm(prev => ({
-                        ...prev,
-                        source_mode: mode,
-                        external_path: mode === 'reference'
-                          ? (prev.external_path || event.external_path || '')
-                          : ''
-                      }));
-                    }}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="managed">{t('events.sourceModeManaged', 'Managed (upload to PicPeak)')}</option>
-                    <option value="reference">{t('events.sourceModeReference', 'Reference external folder')}</option>
-                  </select>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    {t('events.sourceModeHelp', 'Use managed mode for direct uploads or reference an external folder that is mounted at /external-media in Docker.')}
-                  </p>
-                </div>
-
-                {editForm.source_mode === 'reference' && (
-                  <div className="mt-3">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      {t('events.externalFolder', 'External Folder')}
-                    </label>
-                    <ExternalFolderPicker
-                      value={editForm.external_path || ''}
-                      onChange={(folder) => setEditForm(prev => ({ ...prev, external_path: folder }))}
-                    />
-                    <p className="text-xs text-neutral-500 mt-1">
-                      {t('events.externalFolderHint', 'These folders come from the /external-media mount inside the container. Ensure it is accessible to the backend process.')}
-                    </p>
-                  </div>
-                )}
-                
-                <div>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={editForm.allow_user_uploads}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, allow_user_uploads: e.target.checked }))}
-                      className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                    />
-                    <span className="ml-2 text-sm text-neutral-700">{t('events.allowUserUploads')}</span>
-                  </label>
-                  <p className="text-xs text-neutral-500 mt-1 ml-6">
-                    {t('events.allowUserUploadsHelp')}
-                  </p>
-                </div>
-                
-                {editForm.allow_user_uploads && (
+              {isEditing ? (
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-1">
-                      {t('events.uploadCategory')}
+                      {t('events.welcomeMessageLabel')}
+                    </label>
+                    <textarea
+                      value={editForm.welcome_message}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, welcome_message: e.target.value }))}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      rows={3}
+                      placeholder={t('events.welcomeMessage')}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      {t('events.photoCap')}
+                    </label>
+                    <Input
+                      type="number"
+                      value={editForm.photo_cap}
+                      onChange={(e) =>
+                        setEditForm(prev => ({
+                          ...prev,
+                          photo_cap: e.target.value === "" ? 0 : Number(e.target.value)
+                        }))
+                      }
+
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      {t('events.hostName')}
+                    </label>
+                    <Input
+                      type="text"
+                      value={editForm.customer_name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, customer_name: e.target.value }))}
+                      placeholder={t('events.hostNamePlaceholder')}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      {t('events.expirationDate')}
+                    </label>
+                    <Input
+                      type="date"
+                      value={editForm.expires_at}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, expires_at: e.target.value }))}
+                      min={format(new Date(), 'yyyy-MM-dd')}
+                    />
+                  </div>
+
+                  {/* Hero Photo Selection */}
+                  <HeroPhotoSelector
+                    photos={photos || []}
+                    currentHeroPhotoId={editForm.hero_photo_id}
+                    onSelect={(photoId) => setEditForm(prev => ({ ...prev, hero_photo_id: photoId }))}
+                    isEditing={isEditing}
+                  />
+
+                  <div>
+                    <label className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        className="mt-1 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                        checked={editForm.require_password}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setEditForm(prev => ({
+                            ...prev,
+                            require_password: checked,
+                            new_password: checked ? prev.new_password : '',
+                            confirm_new_password: checked ? prev.confirm_new_password : '',
+                          }));
+                          if (!checked) {
+                            setShowNewPassword(false);
+                          }
+                        }}
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-neutral-700">{t('events.requirePasswordToggle')}</span>
+                        <p className="text-xs text-neutral-500 mt-1">
+                          {t('events.requirePasswordToggleHelp', 'Disable this if you want to share the gallery without a password. Anyone with the link will be able to view the photos.')}
+                        </p>
+                      </div>
+                    </label>
+
+                    {!editForm.require_password && (
+                      <div className="mt-2 rounded-md border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">
+                        {t('events.publicGalleryWarning', 'Public galleries are accessible to anyone with the link. Consider enabling download watermarks and monitoring activity.')}
+                      </div>
+                    )}
+                  </div>
+
+                  {editForm.require_password && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                          {t('events.newPasswordLabel', 'New gallery password')}
+                        </label>
+                        <div className="relative">
+                          <Input
+                            type={showNewPassword ? 'text' : 'password'}
+                            value={editForm.new_password}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, new_password: e.target.value }))}
+                            placeholder={t('events.enterPassword')}
+                            leftIcon={<Lock className="w-5 h-5 text-neutral-400" />}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="w-5 h-5 text-neutral-400 hover:text-neutral-600" />
+                            ) : (
+                              <Eye className="w-5 h-5 text-neutral-400 hover:text-neutral-600" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">
+                          {t('events.confirmPassword')}
+                        </label>
+                        <Input
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={editForm.confirm_new_password}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, confirm_new_password: e.target.value }))}
+                          placeholder={t('events.confirmPasswordPlaceholder')}
+                          leftIcon={<Lock className="w-5 h-5 text-neutral-400" />}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      {t('events.sourceMode', 'Source Mode')}
                     </label>
                     <select
-                      value={editForm.upload_category_id || ''}
-                      onChange={(e) => setEditForm(prev => ({ 
-                        ...prev, 
-                        upload_category_id: e.target.value ? parseInt(e.target.value) : null 
-                      }))}
+                      value={editForm.source_mode}
+                      onChange={(e) => {
+                        const mode = e.target.value as 'managed' | 'reference';
+                        setEditForm(prev => ({
+                          ...prev,
+                          source_mode: mode,
+                          external_path: mode === 'reference'
+                            ? (prev.external_path || event.external_path || '')
+                            : ''
+                        }));
+                      }}
                       className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
-                      <option value="">{t('events.selectCategory')}</option>
-                      {categories?.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
+                      <option value="managed">{t('events.sourceModeManaged', 'Managed (upload to PicPeak)')}</option>
+                      <option value="reference">{t('events.sourceModeReference', 'Reference external folder')}</option>
                     </select>
                     <p className="text-xs text-neutral-500 mt-1">
-                      {t('events.uploadCategoryHelp')}
+                      {t('events.sourceModeHelp', 'Use managed mode for direct uploads or reference an external folder that is mounted at /external-media in Docker.')}
                     </p>
                   </div>
-                )}
-                
-                {/* Feedback Settings */}
-                <div className="mt-4 pt-4 border-t border-neutral-200">
-                  <h3 className="text-sm font-semibold text-neutral-900 mb-3">{t('feedback.settings.title', 'Guest Feedback Settings')}</h3>
-                  <FeedbackSettings
-                    settings={feedbackSettings}
-                    onChange={setFeedbackSettings}
-                  />
-                </div>
 
-                {/* Download Protection Settings */}
-                <div className="mt-4 pt-4 border-t border-neutral-200">
-                  <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-primary-600" />
-                    {t('events.downloadProtection', 'Download Protection')}
-                  </h3>
+                  {editForm.source_mode === 'reference' && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        {t('events.externalFolder', 'External Folder')}
+                      </label>
+                      <ExternalFolderPicker
+                        value={editForm.external_path || ''}
+                        onChange={(folder) => setEditForm(prev => ({ ...prev, external_path: folder }))}
+                      />
+                      <p className="text-xs text-neutral-500 mt-1">
+                        {t('events.externalFolderHint', 'These folders come from the /external-media mount inside the container. Ensure it is accessible to the backend process.')}
+                      </p>
+                    </div>
+                  )}
 
-                  <div className="space-y-3">
+                  <div>
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={editForm.allow_downloads}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, allow_downloads: e.target.checked }))}
+                        checked={editForm.allow_user_uploads}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, allow_user_uploads: e.target.checked }))}
                         className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                       />
-                      <Download className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
-                      <span className="text-sm text-neutral-700">{t('events.allowDownloads', 'Allow photo downloads')}</span>
+                      <span className="ml-2 text-sm text-neutral-700">{t('events.allowUserUploads')}</span>
                     </label>
-
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.disable_right_click}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, disable_right_click: e.target.checked }))}
-                        className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                      />
-                      <MousePointer className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
-                      <span className="text-sm text-neutral-700">{t('events.disableRightClick', 'Block right-click menu')}</span>
-                    </label>
-
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.watermark_downloads}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, watermark_downloads: e.target.checked }))}
-                        className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                      />
-                      <Droplets className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
-                      <span className="text-sm text-neutral-700">{t('events.watermarkDownloads', 'Add watermark to downloads')}</span>
-                    </label>
-
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.enable_devtools_protection}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, enable_devtools_protection: e.target.checked }))}
-                        className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                      />
-                      <Monitor className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
-                      <span className="text-sm text-neutral-700">{t('events.enableDevtoolsProtection', 'Detect developer tools')}</span>
-                    </label>
-
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.use_canvas_rendering}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, use_canvas_rendering: e.target.checked }))}
-                        className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                      />
-                      <Image className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
-                      <span className="text-sm text-neutral-700">{t('events.useCanvasRendering', 'Canvas rendering (advanced protection)')}</span>
-                    </label>
-
-                    <p className="text-xs text-neutral-500 mt-2">
-                      {t('events.protectionInfo', 'Protection features help prevent unauthorized downloads but cannot block all methods.')}
+                    <p className="text-xs text-neutral-500 mt-1 ml-6">
+                      {t('events.allowUserUploadsHelp')}
                     </p>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <dl className="space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-neutral-500">{t('events.sourceMode', 'Source Mode')}</dt>
-                  <dd className="mt-1 text-sm text-neutral-900">
-                    {event.source_mode === 'reference' ? t('events.sourceModeReference', 'Reference external folder') : t('events.sourceModeManaged', 'Managed (upload to PicPeak)')}
-                    {event.source_mode === 'reference' && event.external_path ? (
-                      <span className="text-neutral-500 ml-2">/external-media/{event.external_path}</span>
-                    ) : null}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-neutral-500">{t('events.welcomeMessage')}</dt>
-                  <dd className="mt-1 text-sm text-neutral-900">
-                    {event.welcome_message || <span className="text-neutral-400">{t('events.noWelcomeMessageSet')}</span>}
-                  </dd>
-                </div>
-                
-                <div>
-                  <dt className="text-sm font-medium text-neutral-500">{t('events.hostName')}</dt>
-                  <dd className="mt-1 text-sm text-neutral-900">
-                    {event.customer_name || <span className="text-neutral-400">{t('common.notSet')}</span>}
-                  </dd>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <dt className="text-sm font-medium text-neutral-500">{t('events.hostEmail')}</dt>
-                  <dd className="mt-1 text-sm text-neutral-900">{event.customer_email}</dd>
+
+                  {editForm.allow_user_uploads && (
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        {t('events.uploadCategory')}
+                      </label>
+                      <select
+                        value={editForm.upload_category_id || ''}
+                        onChange={(e) => setEditForm(prev => ({
+                          ...prev,
+                          upload_category_id: e.target.value ? parseInt(e.target.value) : null
+                        }))}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">{t('events.selectCategory')}</option>
+                        {categories?.map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        {t('events.uploadCategoryHelp')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Feedback Settings */}
+                  <div className="mt-4 pt-4 border-t border-neutral-200">
+                    <h3 className="text-sm font-semibold text-neutral-900 mb-3">{t('feedback.settings.title', 'Guest Feedback Settings')}</h3>
+                    <FeedbackSettings
+                      settings={feedbackSettings}
+                      onChange={setFeedbackSettings}
+                    />
                   </div>
-                  
-                  <div>
-                    <dt className="text-sm font-medium text-neutral-500">{t('events.adminEmail')}</dt>
-                    <dd className="mt-1 text-sm text-neutral-900">{event.admin_email}</dd>
+
+                  {/* Download Protection Settings */}
+                  <div className="mt-4 pt-4 border-t border-neutral-200">
+                    <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary-600" />
+                      {t('events.downloadProtection', 'Download Protection')}
+                    </h3>
+
+                    <div className="space-y-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editForm.allow_downloads}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, allow_downloads: e.target.checked }))}
+                          className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                        />
+                        <Download className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
+                        <span className="text-sm text-neutral-700">{t('events.allowDownloads', 'Allow photo downloads')}</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editForm.disable_right_click}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, disable_right_click: e.target.checked }))}
+                          className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                        />
+                        <MousePointer className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
+                        <span className="text-sm text-neutral-700">{t('events.disableRightClick', 'Block right-click menu')}</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editForm.watermark_downloads}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, watermark_downloads: e.target.checked }))}
+                          className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                        />
+                        <Droplets className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
+                        <span className="text-sm text-neutral-700">{t('events.watermarkDownloads', 'Add watermark to downloads')}</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editForm.enable_devtools_protection}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, enable_devtools_protection: e.target.checked }))}
+                          className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                        />
+                        <Monitor className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
+                        <span className="text-sm text-neutral-700">{t('events.enableDevtoolsProtection', 'Detect developer tools')}</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editForm.use_canvas_rendering}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, use_canvas_rendering: e.target.checked }))}
+                          className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                        />
+                        <Image className="w-4 h-4 ml-2 mr-1 text-neutral-500" />
+                        <span className="text-sm text-neutral-700">{t('events.useCanvasRendering', 'Canvas rendering (advanced protection)')}</span>
+                      </label>
+
+                      <p className="text-xs text-neutral-500 mt-2">
+                        {t('events.protectionInfo', 'Protection features help prevent unauthorized downloads but cannot block all methods.')}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+              ) : (
+                <dl className="space-y-4">
                   <div>
-                    <dt className="text-sm font-medium text-neutral-500">{t('events.created')}</dt>
+                    <dt className="text-sm font-medium text-neutral-500">{t('events.sourceMode', 'Source Mode')}</dt>
                     <dd className="mt-1 text-sm text-neutral-900">
-                      {format(safeParseDate(event.created_at), 'PP')}
+                      {event.source_mode === 'reference' ? t('events.sourceModeReference', 'Reference external folder') : t('events.sourceModeManaged', 'Managed (upload to PicPeak)')}
+                      {event.source_mode === 'reference' && event.external_path ? (
+                        <span className="text-neutral-500 ml-2">/external-media/{event.external_path}</span>
+                      ) : null}
                     </dd>
                   </div>
-                  
                   <div>
-                    <dt className="text-sm font-medium text-neutral-500">{t('events.expires')}</dt>
+                    <dt className="text-sm font-medium text-neutral-500">{t('events.welcomeMessage')}</dt>
                     <dd className="mt-1 text-sm text-neutral-900">
-                      {format(safeParseDate(event.expires_at), 'PP')}
-                      {!event.is_archived && daysUntilExpiration > 0 && (
-                        <span className="text-neutral-500 ml-1">
-                          {t('events.daysLeft', { count: daysUntilExpiration })}
+                      {event.welcome_message || <span className="text-neutral-400">{t('events.noWelcomeMessageSet')}</span>}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt className="text-sm font-medium text-neutral-500">{t('events.photoCap')}</dt>
+                    <dd className="mt-1 text-sm text-neutral-900">
+                      {event.photo_cap || <span className="text-neutral-400">{t('events.NophotoCap')}</span>}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt className="text-sm font-medium text-neutral-500">{t('events.hostName')}</dt>
+                    <dd className="mt-1 text-sm text-neutral-900">
+                      {event.customer_name || <span className="text-neutral-400">{t('common.notSet')}</span>}
+                    </dd>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <dt className="text-sm font-medium text-neutral-500">{t('events.hostEmail')}</dt>
+                      <dd className="mt-1 text-sm text-neutral-900">{event.customer_email}</dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-sm font-medium text-neutral-500">{t('events.adminEmail')}</dt>
+                      <dd className="mt-1 text-sm text-neutral-900">{event.admin_email}</dd>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <dt className="text-sm font-medium text-neutral-500">{t('events.created')}</dt>
+                      <dd className="mt-1 text-sm text-neutral-900">
+                        {format(safeParseDate(event.created_at), 'PP')}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-sm font-medium text-neutral-500">{t('events.expires')}</dt>
+                      <dd className="mt-1 text-sm text-neutral-900">
+                        {format(safeParseDate(event.expires_at), 'PP')}
+                        {!event.is_archived && daysUntilExpiration > 0 && (
+                          <span className="text-neutral-500 ml-1">
+                            {t('events.daysLeft', { count: daysUntilExpiration })}
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+
+                  <div>
+                    <dt className="text-sm font-medium text-neutral-500">{t('events.heroPhoto')}</dt>
+                    <dd className="mt-1 text-sm text-neutral-900">
+                      {event.hero_photo_id ? (
+                        <span className="text-primary-600">{t('events.heroPhotoSelected')}</span>
+                      ) : (
+                        <span className="text-neutral-400">{t('events.noHeroPhotoSelected')}</span>
+                      )}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt className="text-sm font-medium text-neutral-500">{t('events.userUploads')}</dt>
+                    <dd className="mt-1 text-sm text-neutral-900">
+                      {event.allow_user_uploads ? (
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded">
+                            {t('common.yes')}
+                          </span>
+                          {event.upload_category_id && (
+                            <p className="text-xs text-neutral-600">
+                              {t('events.uploadCategory')}: {categories.find(c => c.id === event.upload_category_id)?.name || 'N/A'}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-neutral-700 bg-neutral-100 rounded">
+                          {t('common.no')}
                         </span>
                       )}
                     </dd>
                   </div>
-                </div>
-                
-                <div>
-                  <dt className="text-sm font-medium text-neutral-500">{t('events.heroPhoto')}</dt>
-                  <dd className="mt-1 text-sm text-neutral-900">
-                    {event.hero_photo_id ? (
-                      <span className="text-primary-600">{t('events.heroPhotoSelected')}</span>
-                    ) : (
-                      <span className="text-neutral-400">{t('events.noHeroPhotoSelected')}</span>
-                    )}
-                  </dd>
-                </div>
-                
-                <div>
-                  <dt className="text-sm font-medium text-neutral-500">{t('events.userUploads')}</dt>
-                  <dd className="mt-1 text-sm text-neutral-900">
-                    {event.allow_user_uploads ? (
-                      <div className="space-y-1">
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded">
-                          {t('common.yes')}
+
+                  {/* Download Protection Display */}
+                  <div className="pt-3 mt-3 border-t border-neutral-200">
+                    <dt className="text-sm font-medium text-neutral-500 flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      {t('events.downloadProtection', 'Download Protection')}
+                    </dt>
+                    <dd className="mt-2 text-sm text-neutral-900">
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${event.protection_level === 'maximum' ? 'bg-red-100 text-red-700' :
+                            event.protection_level === 'enhanced' ? 'bg-orange-100 text-orange-700' :
+                              event.protection_level === 'standard' ? 'bg-blue-100 text-blue-700' :
+                                'bg-neutral-100 text-neutral-700'
+                          }`}>
+                          {event.protection_level || 'standard'}
                         </span>
-                        {event.upload_category_id && (
-                          <p className="text-xs text-neutral-600">
-                            {t('events.uploadCategory')}: {categories.find(c => c.id === event.upload_category_id)?.name || 'N/A'}
-                          </p>
+                        {event.disable_right_click && (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 rounded">
+                            <MousePointer className="w-3 h-3 mr-1" />
+                            {t('events.rightClickBlocked', 'Right-click blocked')}
+                          </span>
+                        )}
+                        {event.enable_devtools_protection && (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 rounded">
+                            <Monitor className="w-3 h-3 mr-1" />
+                            {t('events.devtoolsDetection', 'DevTools detection')}
+                          </span>
+                        )}
+                        {!event.allow_downloads && (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded">
+                            <Download className="w-3 h-3 mr-1" />
+                            {t('events.downloadsDisabled', 'Downloads disabled')}
+                          </span>
+                        )}
+                        {event.watermark_downloads && (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 rounded">
+                            <Droplets className="w-3 h-3 mr-1" />
+                            {t('events.watermarked', 'Watermarked')}
+                          </span>
                         )}
                       </div>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-neutral-700 bg-neutral-100 rounded">
-                        {t('common.no')}
-                      </span>
-                    )}
-                  </dd>
-                </div>
+                    </dd>
+                  </div>
+                </dl>
+              )}
+            </Card>
 
-                {/* Download Protection Display */}
-                <div className="pt-3 mt-3 border-t border-neutral-200">
-                  <dt className="text-sm font-medium text-neutral-500 flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    {t('events.downloadProtection', 'Download Protection')}
-                  </dt>
-                  <dd className="mt-2 text-sm text-neutral-900">
-                    <div className="flex flex-wrap gap-2">
-                      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
-                        event.protection_level === 'maximum' ? 'bg-red-100 text-red-700' :
-                        event.protection_level === 'enhanced' ? 'bg-orange-100 text-orange-700' :
-                        event.protection_level === 'standard' ? 'bg-blue-100 text-blue-700' :
-                        'bg-neutral-100 text-neutral-700'
-                      }`}>
-                        {event.protection_level || 'standard'}
-                      </span>
-                      {event.disable_right_click && (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 rounded">
-                          <MousePointer className="w-3 h-3 mr-1" />
-                          {t('events.rightClickBlocked', 'Right-click blocked')}
-                        </span>
-                      )}
-                      {event.enable_devtools_protection && (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 rounded">
-                          <Monitor className="w-3 h-3 mr-1" />
-                          {t('events.devtoolsDetection', 'DevTools detection')}
-                        </span>
-                      )}
-                      {!event.allow_downloads && (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded">
-                          <Download className="w-3 h-3 mr-1" />
-                          {t('events.downloadsDisabled', 'Downloads disabled')}
-                        </span>
-                      )}
-                      {event.watermark_downloads && (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 rounded">
-                          <Droplets className="w-3 h-3 mr-1" />
-                          {t('events.watermarked', 'Watermarked')}
-                        </span>
-                      )}
-                    </div>
-                  </dd>
-                </div>
-              </dl>
-            )}
-          </Card>
+            {/* Share Link */}
+            <Card padding="md">
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.shareLink')}</h2>
 
-          {/* Share Link */}
-          <Card padding="md">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.shareLink')}</h2>
-            
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={event.share_link}
-                readOnly
-                className="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-sm"
-              />
-              <Button
-                variant="outline"
-                size="md"
-                leftIcon={copiedLink ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                onClick={handleCopyLink}
-              >
-                {copiedLink ? t('events.copied') : t('events.copy')}
-              </Button>
-            </div>
-            
-            <p className="text-sm text-neutral-600 mt-2">
-              {isGalleryPublic(event.require_password)
-                ? t('events.shareWithGuestsPublic', 'Anyone with this link can view the gallery. No password is required.')
-                : t('events.shareWithGuests')}
-            </p>
-            
-            {!event.is_archived && (
-              <div className="mt-4 pt-4 border-t border-neutral-200 space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={event.share_link}
+                  readOnly
+                  className="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-sm"
+                />
                 <Button
                   variant="outline"
-                  size="sm"
-                  leftIcon={<Key className="w-4 h-4" />}
-                  onClick={() => setShowPasswordReset(true)}
-                  className="w-full justify-center"
+                  size="md"
+                  leftIcon={copiedLink ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  onClick={handleCopyLink}
                 >
-                  {t('events.resetGalleryPassword')}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Mail className="w-4 h-4" />}
-                  onClick={async () => {
-                    try {
-                      await eventsService.resendCreationEmail(event.id);
-                      toast.success(t('events.creationEmailResent'));
-                    } catch (error) {
-                      toast.error(t('events.failedToResendEmail'));
-                    }
-                  }}
-                  className="w-full justify-center"
-                >
-                  {t('events.resendCreationEmail')}
+                  {copiedLink ? t('events.copied') : t('events.copy')}
                 </Button>
               </div>
-            )}
-          </Card>
 
+              <p className="text-sm text-neutral-600 mt-2">
+                {isGalleryPublic(event.require_password)
+                  ? t('events.shareWithGuestsPublic', 'Anyone with this link can view the gallery. No password is required.')
+                  : t('events.shareWithGuests')}
+              </p>
 
-
-          {/* Actions */}
-          {!event.is_archived && (
-            <Card padding="md">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.actions')}</h2>
-              
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  leftIcon={<Archive className="w-4 h-4" />}
-                  onClick={() => {
-                    if (confirm(t('events.archiveConfirm'))) {
-                      archiveMutation.mutate();
-                    }
-                  }}
-                  isLoading={archiveMutation.isPending}
-                  className="w-full justify-center"
-                >
-                  {t('events.archiveEvent')}
-                </Button>
-                
-                <p className="text-xs text-neutral-500 text-center">
-                  {t('events.archivingInfo')}
-                </p>
-              </div>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Column - Statistics, Theme, and Actions */}
-        <div className="space-y-6">
-          {/* Photo Statistics */}
-          <Card padding="md">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.photoStatistics')}</h2>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
-                <span className="text-sm text-neutral-600">{t('events.totalPhotos')}</span>
-                <span className="text-sm font-medium">{event.photo_count || 0}</span>
-              </div>
-              
-              <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
-                <span className="text-sm text-neutral-600">{t('events.totalSize')}</span>
-                <span className="text-sm font-medium">
-                  {event.total_size ? `${(event.total_size / (1024 * 1024)).toFixed(1)} MB` : '0 MB'}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
-                <span className="text-sm text-neutral-600">{t('events.categories')}</span>
-                <span className="text-sm font-medium">{categories.length}</span>
-              </div>
-              
-              {event.total_views !== undefined && (
-                <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
-                  <span className="text-sm text-neutral-600">{t('events.totalViews')}</span>
-                  <span className="text-sm font-medium">{event.total_views || 0}</span>
-                </div>
-              )}
-              
-              {event.total_downloads !== undefined && (
-                <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
-                  <span className="text-sm text-neutral-600">{t('events.totalDownloads')}</span>
-                  <span className="text-sm font-medium">{event.total_downloads || 0}</span>
-                </div>
-              )}
-              
-              {event.unique_visitors !== undefined && (
-                <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
-                  <span className="text-sm text-neutral-600">{t('events.uniqueVisitors')}</span>
-                  <span className="text-sm font-medium">{event.unique_visitors || 0}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Image className="w-4 h-4" />}
-                onClick={() => setActiveTab('photos')}
-                className="w-full justify-center"
-              >
-                {t('events.managePhotos')}
-              </Button>
-            </div>
-          </Card>
-
-          {/* Theme & Style */}
-          {isEditing && !event.is_archived && (
-            <Card padding="md">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('branding.themeAndStyle')}</h2>
-              <ThemeCustomizerEnhanced
-                value={currentTheme || GALLERY_THEME_PRESETS.default.config}
-                onChange={(theme) => {
-                  setCurrentTheme(theme);
-                  setEditForm(prev => ({ ...prev, color_theme: JSON.stringify(theme) }));
-                }}
-                presetName={currentPresetName}
-                onPresetChange={(presetName) => {
-                  setCurrentPresetName(presetName);
-                  if (presetName !== 'custom') {
-                    const preset = GALLERY_THEME_PRESETS[presetName];
-                    if (preset) {
-                      setCurrentTheme(preset.config);
-                      setEditForm(prev => ({ ...prev, color_theme: presetName }));
-                    }
-                  }
-                }}
-                isPreviewMode={true}
-                showGalleryLayouts={true}
-                hideActions={true}
-                cssTemplates={cssTemplates}
-                cssTemplateId={editForm.css_template_id}
-                onCssTemplateChange={(templateId) => setEditForm(prev => ({ ...prev, css_template_id: templateId }))}
-              />
-            </Card>
-          )}
-
-          {/* Theme Display (when not editing) */}
-          {!isEditing && !event.is_archived && (
-            <Card padding="md">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.galleryTheme')}</h2>
-              <ThemeDisplay 
-                theme={event.color_theme || GALLERY_THEME_PRESETS.default.config} 
-                presetName={event.color_theme && !event.color_theme.startsWith('{') ? event.color_theme : undefined}
-                showDetails={true}
-              />
-            </Card>
-          )}
-
-          {/* Feedback Moderation Panel */}
-          {!event.is_archived && feedbackSettings?.feedback_enabled && (
-            <FeedbackModerationPanel 
-              eventId={parseInt(id!)} 
-              compact={true}
-              maxItems={3}
-            />
-          )}
-
-          {/* Archive Status */}
-          {event.is_archived ? (
-            <Card padding="md">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.archiveStatusTitle')}</h2>
-              
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-neutral-500">{t('events.archivedOn')}</p>
-                  <p className="text-sm text-neutral-900">
-                    {event.archived_at && format(safeParseDate(event.archived_at), 'PPp')}
-                  </p>
-                </div>
-                
-                {event.archive_path && (
+              {!event.is_archived && (
+                <div className="mt-4 pt-4 border-t border-neutral-200 space-y-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    leftIcon={<Download className="w-4 h-4" />}
+                    leftIcon={<Key className="w-4 h-4" />}
+                    onClick={() => setShowPasswordReset(true)}
+                    className="w-full justify-center"
+                  >
+                    {t('events.resetGalleryPassword')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Mail className="w-4 h-4" />}
                     onClick={async () => {
                       try {
-                        toast.info(t('events.downloadingArchive', { name: event.event_name }));
-                        await archiveService.downloadArchive(Number(id), `${event.slug}-archive.zip`);
-                        toast.success(t('events.downloadStarted'));
+                        await eventsService.resendCreationEmail(event.id);
+                        toast.success(t('events.creationEmailResent'));
                       } catch (error) {
-                        toast.error(t('events.failedToDownloadArchive'));
+                        toast.error(t('events.failedToResendEmail'));
                       }
                     }}
                     className="w-full justify-center"
                   >
-                    {t('events.downloadArchive')}
+                    {t('events.resendCreationEmail')}
                   </Button>
+                </div>
+              )}
+            </Card>
+
+
+
+            {/* Actions */}
+            {!event.is_archived && (
+              <Card padding="md">
+                <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.actions')}</h2>
+
+                <div className="space-y-3">
+                  <Button
+                    variant="outline"
+                    leftIcon={<Archive className="w-4 h-4" />}
+                    onClick={() => {
+                      if (confirm(t('events.archiveConfirm'))) {
+                        archiveMutation.mutate();
+                      }
+                    }}
+                    isLoading={archiveMutation.isPending}
+                    className="w-full justify-center"
+                  >
+                    {t('events.archiveEvent')}
+                  </Button>
+
+                  <p className="text-xs text-neutral-500 text-center">
+                    {t('events.archivingInfo')}
+                  </p>
+                </div>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Column - Statistics, Theme, and Actions */}
+          <div className="space-y-6">
+            {/* Photo Statistics */}
+            <Card padding="md">
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.photoStatistics')}</h2>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
+                  <span className="text-sm text-neutral-600">{t('events.totalPhotos')}</span>
+                  <span className="text-sm font-medium">{event.photo_count || 0}</span>
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
+                  <span className="text-sm text-neutral-600">{t('events.totalSize')}</span>
+                  <span className="text-sm font-medium">
+                    {event.total_size ? `${(event.total_size / (1024 * 1024)).toFixed(1)} MB` : '0 MB'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
+                  <span className="text-sm text-neutral-600">{t('events.categories')}</span>
+                  <span className="text-sm font-medium">{categories.length}</span>
+                </div>
+
+                {event.total_views !== undefined && (
+                  <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
+                    <span className="text-sm text-neutral-600">{t('events.totalViews')}</span>
+                    <span className="text-sm font-medium">{event.total_views || 0}</span>
+                  </div>
+                )}
+
+                {event.total_downloads !== undefined && (
+                  <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
+                    <span className="text-sm text-neutral-600">{t('events.totalDownloads')}</span>
+                    <span className="text-sm font-medium">{event.total_downloads || 0}</span>
+                  </div>
+                )}
+
+                {event.unique_visitors !== undefined && (
+                  <div className="flex items-center justify-between py-2 px-3 bg-neutral-50 rounded-lg">
+                    <span className="text-sm text-neutral-600">{t('events.uniqueVisitors')}</span>
+                    <span className="text-sm font-medium">{event.unique_visitors || 0}</span>
+                  </div>
                 )}
               </div>
+
+              <div className="mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Image className="w-4 h-4" />}
+                  onClick={() => setActiveTab('photos')}
+                  className="w-full justify-center"
+                >
+                  {t('events.managePhotos')}
+                </Button>
+              </div>
             </Card>
-          ) : null}
+
+            {/* Theme & Style */}
+            {isEditing && !event.is_archived && (
+              <Card padding="md">
+                <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('branding.themeAndStyle')}</h2>
+                <ThemeCustomizerEnhanced
+                  value={currentTheme || GALLERY_THEME_PRESETS.default.config}
+                  onChange={(theme) => {
+                    setCurrentTheme(theme);
+                    setEditForm(prev => ({ ...prev, color_theme: JSON.stringify(theme) }));
+                  }}
+                  presetName={currentPresetName}
+                  onPresetChange={(presetName) => {
+                    setCurrentPresetName(presetName);
+                    if (presetName !== 'custom') {
+                      const preset = GALLERY_THEME_PRESETS[presetName];
+                      if (preset) {
+                        setCurrentTheme(preset.config);
+                        setEditForm(prev => ({ ...prev, color_theme: presetName }));
+                      }
+                    }
+                  }}
+                  isPreviewMode={true}
+                  showGalleryLayouts={true}
+                  hideActions={true}
+                  cssTemplates={cssTemplates}
+                  cssTemplateId={editForm.css_template_id}
+                  onCssTemplateChange={(templateId) => setEditForm(prev => ({ ...prev, css_template_id: templateId }))}
+                />
+              </Card>
+            )}
+
+            {/* Theme Display (when not editing) */}
+            {!isEditing && !event.is_archived && (
+              <Card padding="md">
+                <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.galleryTheme')}</h2>
+                <ThemeDisplay
+                  theme={event.color_theme || GALLERY_THEME_PRESETS.default.config}
+                  presetName={event.color_theme && !event.color_theme.startsWith('{') ? event.color_theme : undefined}
+                  showDetails={true}
+                />
+              </Card>
+            )}
+
+            {/* Feedback Moderation Panel */}
+            {!event.is_archived && feedbackSettings?.feedback_enabled && (
+              <FeedbackModerationPanel
+                eventId={parseInt(id!)}
+                compact={true}
+                maxItems={3}
+              />
+            )}
+
+            {/* Archive Status */}
+            {event.is_archived ? (
+              <Card padding="md">
+                <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('events.archiveStatusTitle')}</h2>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-500">{t('events.archivedOn')}</p>
+                    <p className="text-sm text-neutral-900">
+                      {event.archived_at && format(safeParseDate(event.archived_at), 'PPp')}
+                    </p>
+                  </div>
+
+                  {event.archive_path && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Download className="w-4 h-4" />}
+                      onClick={async () => {
+                        try {
+                          toast.info(t('events.downloadingArchive', { name: event.event_name }));
+                          await archiveService.downloadArchive(Number(id), `${event.slug}-archive.zip`);
+                          toast.success(t('events.downloadStarted'));
+                        } catch (error) {
+                          toast.error(t('events.failedToDownloadArchive'));
+                        }
+                      }}
+                      className="w-full justify-center"
+                    >
+                      {t('events.downloadArchive')}
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            ) : null}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Photos Tab */}
@@ -1555,11 +1579,11 @@ export const EventDetailsPage: React.FC = () => {
                 {t('events.organizeCategoriesInfo')}
               </p>
             </div>
-            
-            <EventCategoryManager 
-              eventId={parseInt(id!)} 
+
+            <EventCategoryManager
+              eventId={parseInt(id!)}
             />
-            
+
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
                 {t('events.categoriesTip')}

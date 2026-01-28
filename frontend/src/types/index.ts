@@ -4,6 +4,7 @@ export interface Event {
   slug: string;
   event_type: string;
   event_name: string;
+  photo_cap: number;
   event_date: string;
   customer_name?: string;
   customer_email: string;
@@ -97,6 +98,7 @@ export interface GalleryData {
   event: {
     id: number;
     event_name: string;
+    photo_cap: number;
     event_type: string;
     event_date: string;
     welcome_message?: string;
