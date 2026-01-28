@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { format as dateFnsFormat, formatDistanceToNow as dateFnsFormatDistanceToNow } from 'date-fns';
-import { de, enUS } from 'date-fns/locale';
+import { de, enUS,ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { publicSettingsService } from '../services/publicSettings.service';
 
@@ -23,9 +23,11 @@ export const useLocalizedDate = () => {
     retry: 1, // Only retry once to avoid blocking the UI
   });
   
-  const getLocale = () => {
-    return i18n.language === 'de' ? de : enUS;
-  };
+const getLocale = () => {
+  if (i18n.language === 'de') return de;
+  if (i18n.language === 'pt' || i18n.language === 'pt-BR') return ptBR;
+  return enUS;
+};
   
   const format = (date: Date | string, formatStr?: string) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;

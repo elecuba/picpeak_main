@@ -184,7 +184,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         <h2 className="text-lg font-semibold text-neutral-900 mb-4">{t('settings.general.featureToggles')}</h2>
 
         <div className="space-y-3">
-          <label className="flex items-center">
+                    <label className="flex items-center">
             <input
               type="checkbox"
               checked={generalSettings.enable_watermark}
@@ -193,8 +193,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
             />
             <span className="ml-2 text-sm text-neutral-700">{t('settings.general.enableWatermark')}</span>
           </label>
-
-          <label className="flex items-center">
+                    <label className="flex items-center">
             <input
               type="checkbox"
               checked={generalSettings.enable_analytics}
@@ -256,6 +255,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
             >
               <option value="en">English</option>
               <option value="de">Deutsch</option>
+              <option value="pt">Português (Brasil)</option>
             </select>
             <p className="text-xs text-neutral-500 mt-1">
               {t('settings.general.defaultLanguageHelp')}
